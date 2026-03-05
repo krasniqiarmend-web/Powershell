@@ -1,7 +1,5 @@
 function New-OnPremMailbox {
-
     [CmdletBinding(SupportsShouldProcess)]
-
     param(
         [Parameter(Mandatory)]
         [string]$Name,
@@ -17,27 +15,23 @@ function New-OnPremMailbox {
     )
 
     if ($PSCmdlet.ShouldProcess($Name, "Create On-Prem Mailbox")) {
-
         try {
+            $rawPass = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 12 | ForEach-Object {[char]$_})
+            $secPass = ConvertTo-SecureString $rawPass -AsPlainText -Force
 
-            New-Mailbox `
-                -Name $Name `
-                -Alias $Alias `
-                -UserPrincipalName $UserPrincipalName `
-                -OrganizationalUnit $OU `
-                -Password (ConvertTo-SecureString "TempPassword123!" -AsPlainText -Force)
+            $mailboxParams = @{
+                Name               = $Name
+                Alias              = $Alias
+                UserPrincipalName  = $UserPrincipalName
+                OrganizationalUnit = $OU
+                Password           = $secPass
+            }
 
-            Write-Log "On-prem mailbox created for $UserPrincipalName"
-
+            New-Mailbox @mailboxParams
+            Write-Log "On-prem mailbox created for $UserPrincipalName. Temp password: $rawPass" "INFO"
         }
-
         catch {
-
-            Write-Log "Mailbox creation failed: $_" "ERROR"
-            throw
-
+            Write-Log "On-prem mailbox creation failed: $($_.Exception.Message)" "ERROR"
         }
-
     }
-
 }

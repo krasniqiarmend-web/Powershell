@@ -1,7 +1,15 @@
-Get-ChildItem $PSScriptRoot\Public\*.ps1 | ForEach-Object {
-    . $_.FullName
-}
+$publicPath = Join-Path $PSScriptRoot "Public"
 
-Get-ChildItem $PSScriptRoot\Private\*.ps1 | ForEach-Object {
-    . $_.FullName
+if (Test-Path $publicPath) {
+    $files = Get-ChildItem -Path $publicPath -Filter *.ps1
+    foreach ($file in $files) {
+        try {
+            . $file.FullName
+        }
+        catch {
+            Write-Warning "Failed to load function from $($file.Name)"
+        }
+    }
+} else {
+    Write-Error "Public folder not found in $PSScriptRoot. Please ensure script files are in the Public directory."
 }

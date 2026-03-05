@@ -1,5 +1,4 @@
 function Get-MessageTraceAnalysis {
-
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -7,29 +6,26 @@ function Get-MessageTraceAnalysis {
     )
 
     try {
-
-        $trace = Get-MessageTrace `
-            -RecipientAddress $Recipient `
-            -StartDate (Get-Date).AddDays(-1) `
-            -EndDate (Get-Date)
-
-        foreach ($message in $trace) {
-
-            Get-MessageTraceDetail `
-                -MessageTraceId $message.MessageTraceId `
-                -RecipientAddress $Recipient
-
+        $traceParams = @{
+            RecipientAddress = $Recipient
+            StartDate        = (Get-Date).AddDays(-1)
+            EndDate          = (Get-Date)
         }
 
-        Write-Log "Detailed message trace executed for $Recipient"
+        $traceResults = Get-MessageTrace @traceParams
 
+        if (-not $traceResults) {
+            Write-Log "No messages found for $Recipient in the last 24 hours." "WARN"
+            return
+        }
+
+        foreach ($msg in $traceResults) {
+            Get-MessageTraceDetail -MessageTraceId $msg.MessageTraceId -RecipientAddress $Recipient
+        }
+
+        Write-Log "Successfully analyzed $($traceResults.Count) messages for $Recipient" "INFO"
     }
-
     catch {
-
-        Write-Log "Message trace analysis failed: $_" "ERROR"
-        throw
-
+        Write-Log "Message trace failed: $($_.Exception.Message)" "ERROR"
     }
-
 }

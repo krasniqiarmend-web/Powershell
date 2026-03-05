@@ -1,15 +1,27 @@
-# Example troubleshooting workflow for Exchange administrators
+# Example troubleshooting runbook for Exchange administrators
 
-Import-Module ../ExchangeAdminToolkit.psm1
+# Safely load the toolkit module first
+$modulePath = Join-Path $PSScriptRoot "ExchangeAdminToolkit.psm1"
+if (Test-Path $modulePath) {
+    Import-Module $modulePath -Force
+} else {
+    Write-Host "Could not find module at $modulePath" -ForegroundColor Red
+    exit
+}
 
-Write-Host "Checking Exchange Service Health..."
-Get-ExchangeServiceHealth
+Write-Log "Starting Exchange Diagnostic Runbook..." "INFO"
 
-Write-Host "Checking Transport Queues..."
-Get-TransportQueueStatus
+# Check Transport Queues
+$queues = Get-TransportQueueStatus
+if ($queues) {
+    $queues | Format-Table -AutoSize
+}
 
-Write-Host "Running Message Trace..."
-Get-MessageTraceAnalysis -Recipient "user@company.com"
+# Run Message Trace
+$testUser = Read-Host "Enter the user email to trace"
+Get-MessageTraceAnalysis -Recipient $testUser
 
-Write-Host "Testing Autodiscover..."
-Test-Autodiscover -EmailAddress "user@company.com"
+# Test Autodiscover
+Test-Autodiscover -EmailAddress $testUser
+
+Write-Log "Runbook execution complete." "INFO"
